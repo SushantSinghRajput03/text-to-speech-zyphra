@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Speech Converter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fb;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            color: #1a1a1a;
+            font-size: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            background: #fff;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        textarea:focus, select:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+
+        .character-count {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .character-count.error {
+            color: #e53e3e;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .range-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .range-value {
+            min-width: 40px;
+            text-align: center;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #4299e1;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #3182ce;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4299e1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: #3182ce;
+        }
+
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        audio::-webkit-media-controls-panel {
+            background-color: #f0f0f0; /* Light grey background */
+            border-radius: 8px;
+            padding: 5px 10px;
+        }
+
+        audio::-webkit-media-controls-play-button {
+            color: #333; /* Dark grey play button */
+        }
+
+        audio::-webkit-media-controls-current-time-display,
+        audio::-webkit-media-controls-time-remaining-display,
+        audio::-webkit-media-controls-timeline,
+        audio::-webkit-media-controls-volume-slider {
+            color: #555; /* Medium grey text/icons */
+        }
+
+        audio::-webkit-media-controls-mute-button,
+        audio::-webkit-media-controls-volume-slider-container {
+            color: #333;
+        }
+
+        audio::-webkit-media-controls-enclosure {
+            clip-path: inset(0 0 0 0 round 8px); /* Rounded corners for the enclosure */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Text to Speech Converter</h1>
+            
+            <div id="errorMessage" class="error-message"></div>
+
+
+            <div class="form-group">
+                <label for="text">Text to convert</label>
+                <textarea 
+                    id="text" 
+                    placeholder="Enter your text here..."
+                    maxlength="1000"
+                    oninput="updateCharacterCount(this)"
+                ></textarea>
+                <div id="characterCount" class="character-count">0 / 1000 characters</div>
+            </div>
+
+            <div class="form-group">
+                <label for="language">Language</label>
+                <select id="language">
+                    <option value="en-us">English (US)</option>
+                    <option value="fr-fr">French</option>
+                    <option value="de">German</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="cmn">Mandarin Chinese</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="rate">Speaking Rate</label>
+                <div class="range-group">
+                    <input 
+                        type="range" 
+                        id="rate" 
+                        min="5" 
+                        max="35" 
+                        value="15"
+                        oninput="updateRateValue(this.value)"
+                    >
+                    <span id="rateValue" class="range-value">15</span>
+                </div>
+            </div>
+
+            <button id="convertBtn" onclick="convertToSpeech()">
+                <span id="buttonText">Convert to Speech</span>
+                <div id="spinner" class="spinner"></div>
+            </button>
+
+            <div id="audioPlayerContainer"></div>
+
+        </div>
+    </div>
+
+    <script>
+        let currentAudioUrl = null;
+
+        function updateCharacterCount(textarea) {
+            const maxLength = 1000;
+            const currentLength = textarea.value.length;
+            const countDisplay = document.getElementById('characterCount');
+            
+            countDisplay.textContent = `${currentLength} / ${maxLength} characters`;
+            
+            if (currentLength > maxLength) {
+                countDisplay.classList.add('error');
+                document.getElementById('convertBtn').disabled = true;
+            } else {
+                countDisplay.classList.remove('error');
+                document.getElementById('convertBtn').disabled = false;
+            }
+        }
+
+        function updateRateValue(value) {
+            document.getElementById('rateValue').textContent = value;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        async function convertToSpeech() {
+            const text = document.getElementById('text').value;
+            
+            if (text.length > 1000) {
+                showError('Text length exceeds maximum of 1000 characters. Please shorten your text.');
+                return;
+            }
+
+            if (!text.trim()) {
+                showError('Please enter some text to convert');
+                return;
+            }
+
+            const button = document.getElementById('convertBtn');
+            const spinner = document.getElementById('spinner');
+            const buttonText = document.getElementById('buttonText');
+            
+            hideError();
+
+            const language = document.getElementById('language').value;
+            const rate = document.getElementById('rate').value;
+
+            const payload = {
+                text,
+                language_iso_code: language,
+                speaking_rate: parseInt(rate),
+                mime_type: 'audio/mp3'
+            };
+            
+            try {
+                button.disabled = true;
+                spinner.style.display = 'block';
+                buttonText.textContent = 'Converting...';
+
+                const response = await fetch('http://localhost:3000/api/tts/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to convert text to speech');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                currentAudioUrl = url;
+
+                // Create audio player dynamically
+                const audioPlayer = document.createElement('audio');
+                audioPlayer.controls = true;
+                audioPlayer.src = url;
+                audioPlayer.style.width = '100%';
+                audioPlayer.style.marginTop = '20px';
+                audioPlayer.classList.add('custom-audio-player'); // Add class for styling
+
+                // Add audio player to container
+                const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+                audioPlayerContainer.innerHTML = ''; // Clear previous player if any
+                audioPlayerContainer.appendChild(audioPlayer);
+
+                // Autoplay the audio
+                audioPlayer.play().catch(error => {
+                    console.error("Autoplay prevented:", error);
+                    // Optionally show a message to the user that they may need to click play
+                });
+
+                // Cleanup when audio ends - now only revoke URL, don't hide player
+                audioPlayer.onended = () => {
+                    window.URL.revokeObjectURL(url);
+                    currentAudioUrl = null;
+                    // audioPlayerContainer.innerHTML = ''; // Remove player from DOM - REMOVED to keep player visible
+                };
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                button.disabled = false;
+                spinner.style.display = 'none';
+                buttonText.textContent = 'Convert to Speech';
+            }
+        }
+    </script>
+</body>
+</html>
