@@ -6,11 +6,13 @@ A TypeScript-based Node.js application that provides text-to-speech conversion u
 
 - Text-to-speech conversion with customizable parameters
 - Voice cloning support
-- Multiple language support
-- Adjustable speaking rate
-- Support for different audio formats
+- Multiple language support (6 languages)
+- Adjustable speaking rate (5-35)
+- Support for different audio formats (WAV, MP3)
 - RESTful API endpoints
 - User-friendly test interface
+- API status monitoring
+- Health check endpoint
 
 ## Setup
 
@@ -78,12 +80,13 @@ Response:
 ```
 
 ### Get API Status
-`GET /api/tts/api-status`
+`GET /health`
 
 Response:
 ```json
-[
-  {
+{
+  "success": true,
+  "data": {
     "isAvailable": true,
     "lastUsed": "2024-07-24T12:00:00.000Z",
     "errorCount": 0,
@@ -93,7 +96,7 @@ Response:
     "lastMonthlyReset": "2024-07-01T00:00:00.000Z",
     "keyPreview": "...1234"
   }
-]
+}
 ```
 
 ## Voice Cloning
@@ -107,32 +110,32 @@ The API supports voice cloning through the `speaker_audio` parameter. To use thi
    - Sample should contain clear speech in the target language
 
 2. Convert the audio file to base64:
-   ```javascript
-   // Browser
-   const file = document.querySelector('input[type="file"]').files[0];
-   const reader = new FileReader();
-   reader.onload = () => {
-     const base64Audio = reader.result.split(',')[1];
-     // Use base64Audio in your API request
-   };
-   reader.readAsDataURL(file);
-   ```
+```javascript
+// Browser
+const file = document.querySelector('input[type="file"]').files[0];
+const reader = new FileReader();
+reader.onload = () => {
+  const base64Audio = reader.result.split(',')[1];
+  // Use base64Audio in your API request
+};
+reader.readAsDataURL(file);
+```
 
 3. Include the base64-encoded audio in your API request:
-   ```javascript
-   const response = await fetch('http://localhost:3000/api/tts/synthesize', {
-     method: 'POST',
-     headers: {
-       'Content-Type': 'application/json',
-     },
-     body: JSON.stringify({
-       text: "Your text here",
-       speaker_audio: base64Audio,
-       language_iso_code: "en-us",
-       speaking_rate: 15
-     })
-   });
-   ```
+```javascript
+const response = await fetch('http://localhost:3000/api/tts/synthesize', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    text: "Your text here",
+    speaker_audio: base64Audio,
+    language_iso_code: "en-us",
+    speaking_rate: 15
+  })
+});
+```
 
 ## Test Interface
 
@@ -185,4 +188,6 @@ Error response format:
 - Maximum voice sample size: 10MB
 - Supported audio formats: WAV, MP3
 - Speaking rate range: 5-35
-- Supported languages: 6 languages
+- Supported languages: 6 languages (English, French, German, Japanese, Korean, Mandarin)
+- TypeScript-based implementation
+- Express.js server with CORS support
